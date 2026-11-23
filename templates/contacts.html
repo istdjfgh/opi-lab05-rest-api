@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_header %}
+{% block title %}Контакти{% endblock %}
+{% block content %}
+{{ page_header('Контакти', 'Завітайте до нас', 'Магазин і ігровий клуб в центрі міста ' ~ shop.city ~ '. Пишіть, телефонуйте або приходьте пограти.') }}
+
+<div class="container">
+    <section class="section two-col">
+        <div class="card contact-card">
+            <h2>Як зв’язатися</h2>
+            <ul class="contact-list">
+                <li><span aria-hidden="true">📍</span> {{ shop.city }}, {{ shop.address }}</li>
+                <li><span aria-hidden="true">📞</span> <a href="tel:+380332001234">{{ shop.phone }}</a></li>
+                <li><span aria-hidden="true">✉️</span> <a href="mailto:{{ shop.email }}">{{ shop.email }}</a></li>
+                <li><span aria-hidden="true">💬</span> Telegram: @kubyk_games</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h2>Години роботи</h2>
+            <table class="table">
+                <tbody>
+                {% for days, time in hours %}
+                    <tr><th scope="row">{{ days }}</th><td>{{ time }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="map-placeholder" role="img" aria-label="Схема проїзду: центр міста, біля Театрального майдану">
+            <span>🗺️</span>
+            <p><strong>{{ shop.address }}</strong><br>5 хвилин пішки від Театрального майдану</p>
+        </div>
+    </section>
+</div>
+{% endblock %}

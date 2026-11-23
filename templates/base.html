@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ shop.name }} — {{ shop.slogan | lower }}. Магазин настільних ігор у місті {{ shop.city }}.">
+    <title>{% block title %}{{ shop.slogan }}{% endblock %} · {{ shop.name }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main">Перейти до вмісту</a>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="logo" href="{{ url_for('main.home') }}" aria-label="{{ shop.name }} — на головну">
+            <span class="logo-mark" aria-hidden="true">⚄</span><span>{{ shop.name }}</span>
+        </a>
+
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
+        <label for="nav-toggle" class="nav-burger" aria-label="Відкрити меню"><span></span><span></span><span></span></label>
+
+        <nav class="main-nav" aria-label="Головне меню">
+            {% for endpoint, label in nav_items %}
+                {% set active = request.endpoint == endpoint or (endpoint == 'shop.catalog' and request.endpoint == 'shop.product_page') %}
+                <a href="{{ url_for(endpoint) }}" {% if active %}aria-current="page"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
+
+        <div class="header-actions">
+            <a class="cart-link {% if request.endpoint in ['shop.cart', 'shop.checkout'] %}active{% endif %}" href="{{ url_for('shop.cart') }}" aria-label="Кошик, товарів: {{ cart_count }}">
+                🛒 <span class="cart-label">Кошик</span>{% if cart_count %}<span class="cart-count">{{ cart_count }}</span>{% endif %}
+            </a>
+            {% if session.is_admin %}
+                <a class="admin-link" href="{{ url_for('admin.dashboard') }}" title="Адмін-панель">⚙️</a>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="container flashes" role="status" aria-live="polite">
+            {% for category, message in messages %}
+                <p class="flash flash-{{ category }}">{{ '✅' if category == 'success' else '⚠️' }} {{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<main id="main">
+    {% block content %}{% endblock %}
+</main>
+
+{% block footer %}
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <div>
+            <p class="footer-logo">⚄ {{ shop.name }}</p>
+            <p>{{ shop.slogan }}. Працюємо з {{ shop.founded }} року.</p>
+        </div>
+        <div>
+            <p class="footer-title">Розділи</p>
+            <ul class="footer-links">
+                {% for endpoint, label in nav_items %}<li><a href="{{ url_for(endpoint) }}">{{ label }}</a></li>{% endfor %}
+            </ul>
+        </div>
+        <div>
+            <p class="footer-title">Контакти</p>
+            <p>{{ shop.city }}, {{ shop.address }}<br>
+               <a href="tel:+380332001234">{{ shop.phone }}</a><br>
+               <a href="mailto:{{ shop.email }}">{{ shop.email }}</a></p>
+            <p><a href="{{ url_for('admin.dashboard') }}">Вхід для адміністратора</a></p>
+        </div>
+    </div>
+    <div class="container footer-bottom">© {{ current_year }} «{{ shop.name }}» · навчальний проєкт, лабораторна робота 05 (ОПІ)</div>
+</footer>
+{% endblock %}
+</body>
+</html>

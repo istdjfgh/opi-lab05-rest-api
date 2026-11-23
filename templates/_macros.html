@@ -1,0 +1,65 @@
+{# Макроси — повторно використовувані фрагменти розмітки. Імпортуються з "with context". #}
+
+{% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro product_card(p) %}
+<article class="game-card">
+    <a class="game-cover" href="{{ url_for('shop.product_page', slug=p.slug) }}" style="--cat: {{ p.category_color }}" tabindex="-1" aria-hidden="true">
+        <span>{{ p.emoji }}</span>
+        {% if p.is_bestseller %}<span class="ribbon">Хіт продажів</span>{% endif %}
+        {% if p.stock == 0 %}<span class="ribbon ribbon-muted">Немає в наявності</span>{% endif %}
+    </a>
+    <div class="game-body">
+        <span class="badge" style="--cat: {{ p.category_color }}">{{ p.category_emoji }} {{ p.category_name }}</span>
+        <h3><a href="{{ url_for('shop.product_page', slug=p.slug) }}">{{ p.name }}</a></h3>
+        <p class="muted">{{ p.short }}</p>
+        <ul class="game-facts" aria-label="Характеристики">
+            <li title="Кількість гравців">👥 {{ p | players }}</li>
+            <li title="Вік">🎂 {{ p.age }}+</li>
+            <li title="Тривалість партії">⏱ {{ p.minutes }} хв</li>
+        </ul>
+        <div class="game-footer">
+            <span class="price">{{ p.price | price }}</span>
+            {% if p.stock > 0 %}
+                <form method="post" action="{{ url_for('shop.add_to_cart', product_id=p.id) }}">
+                    {{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}">
+                    <button class="btn btn-small btn-primary" type="submit" aria-label="Додати «{{ p.name }}» до кошика">🛒 Купити</button>
+                </form>
+            {% else %}
+                <span class="muted small">Очікується</span>
+            {% endif %}
+        </div>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro page_header(eyebrow, title, lead='') %}
+<section class="page-header">
+    <div class="container">
+        <p class="eyebrow">{{ eyebrow }}</p>
+        <h1>{{ title }}</h1>
+        {% if lead %}<p class="lead">{{ lead }}</p>{% endif %}
+    </div>
+</section>
+{% endmacro %}
+
+{#- Поле форми з підписом, значенням після помилки і текстом помилки -#}
+{% macro field(name, label, values, errors, type='text', required=false, hint='', attrs='') %}
+<div class="field {% if errors.get(name) %}has-error{% endif %}">
+    <label for="f-{{ name }}">{{ label }}{% if required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+    {% if type == 'textarea' %}
+        <textarea id="f-{{ name }}" name="{{ name }}" rows="4" {% if required %}required{% endif %} {{ attrs | safe }}
+                  {% if errors.get(name) %}aria-invalid="true" aria-describedby="e-{{ name }}"{% endif %}>{{ values.get(name, '') if values.get(name) is not none }}</textarea>
+    {% else %}
+        <input id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ values.get(name, '') if values.get(name) is not none }}"
+               {% if required %}required{% endif %} {{ attrs | safe }}
+               {% if errors.get(name) %}aria-invalid="true" aria-describedby="e-{{ name }}"{% endif %}>
+    {% endif %}
+    {% if hint and not errors.get(name) %}<p class="hint">{{ hint }}</p>{% endif %}
+    {% if errors.get(name) %}<p class="field-error" id="e-{{ name }}">{{ errors[name] }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro stars(rating) %}<span class="stars" aria-label="Оцінка {{ rating }} з 5">{{ '★' * rating }}<span class="stars-off">{{ '★' * (5 - rating) }}</span></span>{% endmacro %}
+
+{% macro status_badge(status) %}<span class="status" style="--st: {{ status_colors.get(status, '#868e96') }}">{{ status }}</span>{% endmacro %}

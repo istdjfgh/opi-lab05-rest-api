@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_header, csrf with context %}
+{% block title %}Кошик{% endblock %}
+{% block content %}
+{{ page_header('Кошик', 'Ваше замовлення') }}
+<div class="container">
+    {% if lines %}
+    <div class="cart-layout">
+        <section class="card cart-lines" aria-label="Товари в кошику">
+            {% for line in lines %}
+                {% set p = line.product %}
+                <div class="cart-line">
+                    <a class="cart-emoji" href="{{ url_for('shop.product_page', slug=p.slug) }}" style="--cat: {{ p.category_color }}" aria-hidden="true" tabindex="-1">{{ p.emoji }}</a>
+                    <div class="cart-info">
+                        <a href="{{ url_for('shop.product_page', slug=p.slug) }}"><strong>{{ p.name }}</strong></a>
+                        <span class="muted small">{{ p.price | price }} × {{ line.quantity }}</span>
+                    </div>
+                    <form method="post" action="{{ url_for('shop.update_cart', product_id=p.id) }}" class="qty-form">
+                        {{ csrf() }}
+                        <label class="visually-hidden" for="q{{ p.id }}">Кількість «{{ p.name }}»</label>
+                        <input id="q{{ p.id }}" name="quantity" type="number" min="1" max="{{ [p.stock, max_quantity] | min }}" value="{{ line.quantity }}">
+                        <button class="btn btn-small btn-ghost" type="submit">Оновити</button>
+                    </form>
+                    <span class="price">{{ line.line_total | price }}</span>
+                    <form method="post" action="{{ url_for('shop.remove_from_cart', product_id=p.id) }}">
+                        {{ csrf() }}<button class="icon-btn" type="submit" aria-label="Прибрати «{{ p.name }}»" title="Прибрати">✕</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </section>
+
+        <aside class="card summary">
+            <h2>Підсумок</h2>
+            <form method="post" action="{{ url_for('shop.apply_promo') }}" class="promo-form">
+                {{ csrf() }}
+                <label for="promo">Промокод</label>
+                <div class="field-row">
+                    <input id="promo" name="code" value="{{ promo.code if promo else '' }}" placeholder="Наприклад, WELCOME10" autocomplete="off">
+                    {% if promo %}
+                        <button class="btn btn-ghost" name="action" value="remove" type="submit">Скасувати</button>
+                    {% else %}
+                        <button class="btn btn-ghost" type="submit">Застосувати</button>
+                    {% endif %}
+                </div>
+                {% if promo_error %}<p class="field-error">{{ promo_error }}</p>{% endif %}
+            </form>
+            <dl class="totals">
+                <div><dt>Товари</dt><dd>{{ subtotal | price }}</dd></div>
+                {% if promo %}<div class="discount"><dt>Знижка {{ promo.code }} (−{{ promo.discount_percent }}%)</dt><dd>−{{ discount | price }}</dd></div>{% endif %}
+                <div class="grand"><dt>До сплати</dt><dd>{{ total | price }}</dd></div>
+            </dl>
+            <a class="btn btn-primary btn-block" href="{{ url_for('shop.checkout') }}">Оформити замовлення</a>
+            <a class="btn btn-ghost btn-block" href="{{ url_for('shop.catalog') }}">Продовжити покупки</a>
+        </aside>
+    </div>
+    {% else %}
+        <div class="empty-state">
+            <p class="empty-icon">🛒</p>
+            <p>Кошик порожній. Оберіть гру в каталозі!</p>
+            <a class="btn btn-primary" href="{{ url_for('shop.catalog') }}">До каталогу</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

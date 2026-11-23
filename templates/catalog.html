@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_card with context %}
+{% block title %}{{ category.name if category else 'Каталог' }}{% endblock %}
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <p class="eyebrow">Каталог</p>
+        <h1>{{ (category.emoji ~ ' ' ~ category.name) if category else 'Настільні ігри' }}</h1>
+        <p class="lead">{% if filters_active %}Знайдено ігор: {{ products | length }}{% else %}У каталозі {{ products | length }} ігор{% endif %}</p>
+    </div>
+</section>
+
+<div class="container catalog-layout">
+    {# Фільтри — звичайна GET-форма: стан пошуку зберігається в адресі, посиланням можна поділитися #}
+    <aside class="filters card" aria-label="Фільтри">
+        <form method="get" action="{{ url_for('shop.catalog') }}">
+            <div class="field">
+                <label for="q">Пошук</label>
+                <input id="q" name="q" type="search" value="{{ filters.q }}" placeholder="Назва або опис">
+            </div>
+
+            <fieldset class="field">
+                <legend>Категорія</legend>
+                <label class="radio"><input type="radio" name="category" value="" {% if not category %}checked{% endif %}> Усі</label>
+                {% for root, children in tree %}
+                    <label class="radio"><input type="radio" name="category" value="{{ root.slug }}" {% if category and category.id == root.id %}checked{% endif %}> {{ root.emoji }} {{ root.name }}</label>
+                    {% for child in children %}
+                        <label class="radio radio-child"><input type="radio" name="category" value="{{ child.slug }}" {% if category and category.id == child.id %}checked{% endif %}> {{ child.emoji }} {{ child.name }}</label>
+                    {% endfor %}
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="field">
+                <legend>Ціна, грн</legend>
+                <div class="field-row">
+                    <input name="min_price" type="number" min="0" step="10" value="{{ filters.min_price | int if filters.min_price is not none }}" placeholder="від {{ price_range[0] | int }}" aria-label="Ціна від">
+                    <input name="max_price" type="number" min="0" step="10" value="{{ filters.max_price | int if filters.max_price is not none }}" placeholder="до {{ price_range[1] | int }}" aria-label="Ціна до">
+                </div>
+            </fieldset>
+
+            <div class="field">
+                <label for="players">Кількість гравців</label>
+                <select id="players" name="players">
+                    <option value="">Будь-яка</option>
+                    {% for n in range(1, 9) %}<option value="{{ n }}" {% if filters.players == n %}selected{% endif %}>{{ n }}</option>{% endfor %}
+                </select>
+            </div>
+
+            <label class="checkbox"><input type="checkbox" name="in_stock" value="1" {% if filters.in_stock %}checked{% endif %}> Лише в наявності</label>
+
+            <div class="field">
+                <label for="sort">Сортування</label>
+                <select id="sort" name="sort">
+                    {% for key, (label, _) in sort_options.items() %}<option value="{{ key }}" {% if filters.sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Показати</button>
+                {% if filters_active %}<a class="btn btn-ghost" href="{{ url_for('shop.catalog') }}">Скинути</a>{% endif %}
+            </div>
+        </form>
+    </aside>
+
+    <section aria-label="Результати">
+        {% if products %}
+            <div class="game-grid">{% for p in products %}{{ product_card(p) }}{% endfor %}</div>
+        {% else %}
+            <div class="empty-state">
+                <p class="empty-icon">🔍</p>
+                <p>За вашим запитом нічого не знайдено.</p>
+                <a class="btn btn-ghost" href="{{ url_for('shop.catalog') }}">Скинути фільтри</a>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

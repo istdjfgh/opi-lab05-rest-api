@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge with context %}
+{% block title %}Замовлення №{{ order.id }}{% endblock %}
+{% block content %}
+<div class="container narrow">
+    <section class="success-box">
+        <p class="success-icon" aria-hidden="true">🎉</p>
+        <h1>Дякуємо, {{ order.customer_name.split(' ')[0] }}!</h1>
+        <p class="lead">Замовлення <strong>№{{ order.id }}</strong> прийнято. Ми зателефонуємо на {{ order.customer_phone }} для підтвердження.</p>
+    </section>
+
+    <section class="card">
+        <div class="section-head"><h2>Деталі замовлення</h2>{{ status_badge(order.status) }}</div>
+        <table class="table">
+            <thead><tr><th>Гра</th><th>Ціна</th><th>К-сть</th><th>Сума</th></tr></thead>
+            <tbody>
+            {% for item in items %}
+                <tr><td>{{ item.emoji }} {{ item.name }}</td><td>{{ item.unit_price | price }}</td><td>{{ item.quantity }}</td><td>{{ item.line_total | price }}</td></tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                {% if order.discount %}<tr><td colspan="3">Знижка ({{ order.promo_code }})</td><td>−{{ order.discount | price }}</td></tr>{% endif %}
+                <tr class="grand"><td colspan="3">Разом</td><td>{{ order.total | price }}</td></tr>
+            </tfoot>
+        </table>
+        <p class="muted">Доставка: {{ order.address }}{% if order.comment %} · Коментар: {{ order.comment }}{% endif %}</p>
+    </section>
+    <p><a class="btn btn-ghost" href="{{ url_for('shop.catalog') }}">Повернутися до каталогу</a></p>
+</div>
+{% endblock %}

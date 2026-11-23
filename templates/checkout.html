@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_header, field, csrf with context %}
+{% block title %}Оформлення замовлення{% endblock %}
+{% block content %}
+{{ page_header('Оформлення', 'Дані для доставки', 'Поля з * обов’язкові. Якщо ви вже замовляли з цим email — ми прив’яжемо замовлення до вашої історії.') }}
+<div class="container cart-layout">
+    <form class="card form-card" method="post" novalidate>
+        {{ csrf() }}
+        <div class="field-row">
+            {{ field('name', 'Ім’я та прізвище', values, errors, required=true, attrs='autocomplete="name"') }}
+            {{ field('phone', 'Телефон', values, errors, type='tel', required=true, hint='+380 67 123 45 67', attrs='autocomplete="tel"') }}
+        </div>
+        {{ field('email', 'Email', values, errors, type='email', required=true, attrs='autocomplete="email"') }}
+        <div class="field-row">
+            {{ field('city', 'Місто', values, errors, required=true, attrs='autocomplete="address-level2"') }}
+            {{ field('address', 'Адреса або відділення Нової пошти', values, errors, required=true) }}
+        </div>
+        {{ field('comment', 'Коментар до замовлення', values, errors, type='textarea', hint='Наприклад: подарункове пакування') }}
+        <button class="btn btn-primary" type="submit">Підтвердити замовлення на {{ total | price }}</button>
+    </form>
+
+    <aside class="card summary">
+        <h2>Ваше замовлення</h2>
+        <ul class="summary-lines">
+            {% for line in lines %}
+                <li><span>{{ line.product.emoji }} {{ line.product.name }} × {{ line.quantity }}</span><span>{{ line.line_total | price }}</span></li>
+            {% endfor %}
+        </ul>
+        <dl class="totals">
+            <div><dt>Товари</dt><dd>{{ subtotal | price }}</dd></div>
+            {% if promo %}<div class="discount"><dt>Знижка {{ promo.code }}</dt><dd>−{{ discount | price }}</dd></div>{% endif %}
+            <div class="grand"><dt>До сплати</dt><dd>{{ total | price }}</dd></div>
+        </dl>
+        <a href="{{ url_for('shop.cart') }}">← Змінити кошик</a>
+    </aside>
+</div>
+{% endblock %}

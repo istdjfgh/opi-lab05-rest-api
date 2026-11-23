@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_card, stars with context %}
+{% block title %}Головна{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="container hero-inner">
+        <div class="hero-text">
+            <p class="eyebrow">Магазин настільних ігор · {{ shop.city }}</p>
+            <h1>Збирайте друзів — <span class="accent">гру ми підберемо</span></h1>
+            <p class="lead">«{{ shop.name }}» — сотні настільних ігор для сім’ї, вечірок і тих, хто любить подумати.
+                Оформіть замовлення онлайн — доставимо за 1–2 дні.</p>
+            <form class="hero-search" action="{{ url_for('shop.catalog') }}" method="get" role="search">
+                <label class="visually-hidden" for="hero-q">Пошук гри</label>
+                <input id="hero-q" name="q" type="search" placeholder="Яку гру шукаєте? Наприклад, «Каркасон»">
+                <button class="btn btn-primary" type="submit">Знайти</button>
+            </form>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+            <span class="die die-1">⚀</span><span class="die die-2">⚄</span>
+            <span class="die die-3">♟</span><span class="die die-4">🃏</span>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container advantages">
+        {% for icon, title, text in advantages %}
+            <article class="advantage">
+                <span class="advantage-icon" aria-hidden="true">{{ icon }}</span>
+                <h2>{{ title }}</h2>
+                <p class="muted">{{ text }}</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if bestsellers %}
+<section class="section">
+    <div class="container">
+        <div class="section-head"><h2>Хіти продажів</h2><a href="{{ url_for('shop.catalog') }}">Увесь каталог →</a></div>
+        <div class="game-grid">{% for p in bestsellers %}{{ product_card(p) }}{% endfor %}</div>
+    </div>
+</section>
+{% endif %}
+
+<section class="section">
+    <div class="container">
+        <h2>Категорії</h2>
+        <div class="category-chips">
+            {% for root, children in tree %}
+                <a class="chip" style="--cat: {{ root.color }}" href="{{ url_for('shop.catalog', category=root.slug) }}">{{ root.emoji }} {{ root.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if reviews %}
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <h2>Що кажуть гравці {% if avg_rating %}<small class="muted">· {{ avg_rating }} ★ з {{ reviews_count }} відгуків</small>{% endif %}</h2>
+            <a href="{{ url_for('feedback.feedback') }}">Залишити відгук →</a>
+        </div>
+        <div class="reviews">
+            {% for r in reviews %}
+                <blockquote class="review">{{ stars(r.rating) }}<p>{{ r.message }}</p><footer>— {{ r.name }}</footer></blockquote>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

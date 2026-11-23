@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import product_card, csrf with context %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <nav class="breadcrumbs" aria-label="Навігаційний ланцюжок">
+        <a href="{{ url_for('main.home') }}">Головна</a> ›
+        <a href="{{ url_for('shop.catalog') }}">Каталог</a> ›
+        <a href="{{ url_for('shop.catalog', category=product.category_slug) }}">{{ product.category_name }}</a> ›
+        <span aria-current="page">{{ product.name }}</span>
+    </nav>
+
+    <article class="game-detail">
+        <div class="game-detail-cover" style="--cat: {{ product.category_color }}" aria-hidden="true">{{ product.emoji }}</div>
+        <div>
+            <span class="badge" style="--cat: {{ product.category_color }}">{{ product.category_emoji }} {{ product.category_name }}</span>
+            {% if product.is_bestseller %}<span class="badge badge-hot">🔥 Хіт продажів</span>{% endif %}
+            <h1>{{ product.name }}</h1>
+            <p class="lead">{{ product.short }}</p>
+            {% if product.description %}<p>{{ product.description }}</p>{% endif %}
+
+            <dl class="specs">
+                <div><dt>Гравців</dt><dd>{{ product | players }}</dd></div>
+                <div><dt>Вік</dt><dd>{{ product.age }}+</dd></div>
+                <div><dt>Партія</dt><dd>{{ product.minutes }} хв</dd></div>
+            </dl>
+
+            <div class="buy-box">
+                <span class="price price-big">{{ product.price | price }}</span>
+                {% if product.stock > 0 %}
+                    <form class="buy-form" method="post" action="{{ url_for('shop.add_to_cart', product_id=product.id) }}">
+                        {{ csrf() }}
+                        <label class="visually-hidden" for="qty">Кількість</label>
+                        <input id="qty" name="quantity" type="number" min="1" max="{{ [product.stock, 10] | min }}" value="1">
+                        <button class="btn btn-primary" type="submit">🛒 Додати до кошика</button>
+                    </form>
+                {% endif %}
+            </div>
+            <p class="stock-line {{ 'in' if product.stock > 0 else 'out' }}">
+                {% if product.stock > 5 %}✓ В наявності{% elif product.stock > 0 %}⚡ Залишилось {{ product.stock }} шт.{% else %}✕ Немає в наявності{% endif %}
+                {% if in_cart %} · у кошику: {{ in_cart }} шт. — <a href="{{ url_for('shop.cart') }}">перейти до кошика</a>{% endif %}
+            </p>
+        </div>
+    </article>
+
+    {% if related %}
+        <section class="section">
+            <h2>Схожі ігри</h2>
+            <div class="game-grid">{% for p in related %}{{ product_card(p) }}{% endfor %}</div>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

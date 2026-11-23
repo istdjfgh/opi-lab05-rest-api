@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_header %}
+{% block title %}Про нас{% endblock %}
+{% block content %}
+{{ page_header('Про нас', 'Ми любимо настільні ігри', 'Уже ' ~ years ~ ' роки допомагаємо людям у місті ' ~ shop.city ~ ' проводити вечори разом, а не в телефонах.') }}
+
+<div class="container">
+    <section class="section two-col">
+        <div>
+            <h2>Наша історія</h2>
+            <p>«{{ shop.name }}» почався у {{ shop.founded }} році з полиці на 20 ігор у кав’ярні та щотижневих ігрових вечорів.
+               Гостям так сподобалось, що вони почали питати, де купити ці ігри. Так з’явився магазин.</p>
+            <p>Сьогодні ми — магазин і ігровий клуб в одному місці: тут можна спробувати гру перед покупкою,
+               а консультант пояснить правила за кілька хвилин.</p>
+        </div>
+        <div class="stats-box">
+            <div class="stat"><span class="stat-value">300+</span><span class="muted">ігор у наявності</span></div>
+            <div class="stat"><span class="stat-value">{{ years }}</span><span class="muted">років роботи</span></div>
+            <div class="stat"><span class="stat-value">5 000+</span><span class="muted">задоволених гравців</span></div>
+            <div class="stat"><span class="stat-value">52</span><span class="muted">ігрові вечори на рік</span></div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Наші цінності</h2>
+        <div class="advantages">
+            <article class="advantage"><span class="advantage-icon" aria-hidden="true">🤝</span><h3>Чесна порада</h3>
+                <p class="muted">Радимо гру під вашу компанію, а не найдорожчу на полиці.</p></article>
+            <article class="advantage"><span class="advantage-icon" aria-hidden="true">🇺🇦</span><h3>Українською</h3>
+                <p class="muted">Підтримуємо українських видавців і локалізації.</p></article>
+            <article class="advantage"><span class="advantage-icon" aria-hidden="true">🎓</span><h3>Навчаємо грати</h3>
+                <p class="muted">Безкоштовні майстер-класи для новачків щомісяця.</p></article>
+            <article class="advantage"><span class="advantage-icon" aria-hidden="true">♻️</span><h3>Без зайвого</h3>
+                <p class="muted">Пакуємо замовлення в перероблений картон.</p></article>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Як ми працюємо</h2>
+        <ol class="steps">
+            <li><strong>Розкажіть про компанію</strong><span class="muted">скільки гравців, вік, скільки часу на партію</span></li>
+            <li><strong>Отримайте добірку</strong><span class="muted">консультант запропонує 2–3 гри з каталогу</span></li>
+            <li><strong>Спробуйте</strong><span class="muted">зіграйте демо-партію в магазині або на ігровому вечорі</span></li>
+            <li><strong>Грайте вдома</strong><span class="muted">заберіть гру або отримайте доставкою за 1–2 дні</span></li>
+        </ol>
+    </section>
+</div>
+{% endblock %}

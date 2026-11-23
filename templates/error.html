@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Помилка {{ error.code }}{% endblock %}
+{% block content %}
+<section class="container error-page">
+    <p class="error-code">{{ error.code }}</p>
+    <h1>{% if error.code == 404 %}Такої сторінки немає{% elif error.code == 400 %}Некоректний запит{% else %}Дію не дозволено{% endif %}</h1>
+    <p class="lead">{% if error.code == 400 and error.description %}{{ error.description }}{% else %}Можливо, гру прибрали з каталогу або в адресі помилка.{% endif %}</p>
+    <a class="btn btn-primary" href="{{ url_for('shop.catalog') }}">До каталогу</a>
+</section>
+{% endblock %}
