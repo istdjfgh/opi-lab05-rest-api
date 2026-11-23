@@ -1,0 +1,283 @@
+newman
+
+Кубик — REST API (лабораторна 05)
+
+□ 1. Службові
+└ GET /health — сервіс працює
+  GET http://127.0.0.1:31362/api/v1/health [200 OK, 258B, 14ms]
+  √  Статус 200
+  √  Відповідь у JSON
+  √  status = ok
+  √  v1 позначена як попередня версія
+
+└ GET /stats без ключа → 401
+  GET http://127.0.0.1:31362/api/v1/stats [401 UNAUTHORIZED, 331B, 3ms]
+  √  Статус 401
+  √  є текст помилки
+
+└ GET /stats з ключем
+  GET http://127.0.0.1:31362/api/v1/stats [200 OK, 452B, 3ms]
+  √  Статус 200
+  √  є кількість замовлень і товарів
+
+□ 2. Товари (v1)
+└ GET /products — усі товари
+  GET http://127.0.0.1:31362/api/v1/products [200 OK, 8.36kB, 2ms]
+  √  Статус 200
+  √  Відповідь у JSON
+  √  масив із 12 товарів
+  √  Час відповіді < 500 мс
+
+└ GET /products?category=strategy&sort=price_asc — фільтр з підкатегоріями
+  GET http://127.0.0.1:31362/api/v1/products?category=strategy&sort=price_asc [200 OK, 2.98kB, 3ms]
+  √  Статус 200
+  √  4 товари, від дешевшого
+
+└ GET /products?q=МАРС — пошук без урахування регістру
+  GET http://127.0.0.1:31362/api/v1/products?q=%D0%9C%D0%90%D0%A0%D0%A1 [200 OK, 946B, 3ms]
+  √  Статус 200
+  √  знайдено «Тераформування Марса»
+
+└ GET /products?category=nope — невідома категорія → 400
+  GET http://127.0.0.1:31362/api/v1/products?category=nope [400 BAD REQUEST, 367B, 3ms]
+  √  Статус 400
+  √  пояснення в details.category
+
+└ GET /products/1 — один товар
+  GET http://127.0.0.1:31362/api/v1/products/1 [200 OK, 946B, 2ms]
+  √  Статус 200
+  √  це «Каркасон»
+
+└ GET /products/999 — неіснуючий id → 404
+  GET http://127.0.0.1:31362/api/v1/products/999 [404 NOT FOUND, 290B, 3ms]
+  √  Статус 404
+  √  Відповідь у JSON
+  √  помилка в JSON
+
+└ POST /products без ключа → 401
+  POST http://127.0.0.1:31362/api/v1/products [401 UNAUTHORIZED, 331B, 3ms]
+  √  Статус 401
+
+└ POST /products з порожніми й хибними полями → 400
+  POST http://127.0.0.1:31362/api/v1/products [400 BAD REQUEST, 837B, 3ms]
+  √  Статус 400
+  √  помилки по полях
+
+└ POST /products не JSON → 415
+  POST http://127.0.0.1:31362/api/v1/products [415 UNSUPPORTED MEDIA TYPE, 336B, 2ms]
+  √  Статус 415
+
+└ POST /products — створити товар
+  POST http://127.0.0.1:31362/api/v1/products [201 CREATED, 702B, 8ms]
+  √  Статус 201
+  √  товар створено
+  √  Є заголовок Location
+
+└ POST /products з існуючим slug → 409
+  POST http://127.0.0.1:31362/api/v1/products [409 CONFLICT, 353B, 2ms]
+  √  Статус 409
+  √  slug має бути унікальним
+
+└ PUT /products/{id} — повна заміна
+  PUT http://127.0.0.1:31362/api/v1/products/13 [200 OK, 694B, 7ms]
+  √  Статус 200
+  √  ціна й назва оновлені
+
+└ PATCH /products/{id} — змінити лише залишок
+  PATCH http://127.0.0.1:31362/api/v1/products/13 [200 OK, 694B, 8ms]
+  √  Статус 200
+  √  stock = 0, інші поля без змін
+
+└ PATCH /products/{id} з players_max < players_min → 400
+  PATCH http://127.0.0.1:31362/api/v1/products/13 [400 BAD REQUEST, 377B, 3ms]
+  √  Статус 400
+  √  помилка players_max
+
+└ DELETE /products/{id} — видалити створений товар
+  DELETE http://127.0.0.1:31362/api/v1/products/13 [204 NO CONTENT, 223B, 8ms]
+  √  Статус 204
+  √  Порожнє тіло
+
+└ GET /products/{id} після видалення → 404
+  GET http://127.0.0.1:31362/api/v1/products/13 [404 NOT FOUND, 289B, 3ms]
+  √  Статус 404
+
+└ DELETE /products/1 — товар у замовленнях → 409
+  DELETE http://127.0.0.1:31362/api/v1/products/1 [409 CONFLICT, 416B, 4ms]
+  √  Статус 409
+  √  пояснення конфлікту
+
+□ 3. Категорії (v1)
+└ GET /categories
+  GET http://127.0.0.1:31362/api/v1/categories [200 OK, 1.42kB, 3ms]
+  √  Статус 200
+  √  7 категорій, є вкладені
+
+└ POST /categories — підкатегорія «Стратегій»
+  POST http://127.0.0.1:31362/api/v1/categories [201 CREATED, 440B, 8ms]
+  √  Статус 201
+  √  parent_id = 2
+
+└ POST /categories третього рівня → 400
+  POST http://127.0.0.1:31362/api/v1/categories [400 BAD REQUEST, 415B, 2ms]
+  √  Статус 400
+  √  лише 2 рівні вкладеності
+
+└ DELETE /categories/5 — є товари → 409
+  DELETE http://127.0.0.1:31362/api/v1/categories/5 [409 CONFLICT, 364B, 2ms]
+  √  Статус 409
+
+└ DELETE /categories/{id} — видалити створену
+  DELETE http://127.0.0.1:31362/api/v1/categories/8 [204 NO CONTENT, 223B, 7ms]
+  √  Статус 204
+
+□ 4. Замовлення (v1)
+└ POST /orders — оформити з промокодом
+  POST http://127.0.0.1:31362/api/v1/orders [201 CREATED, 816B, 10ms]
+  √  Статус 201
+  √  суми пораховані сервером
+  √  статус «Нове», 1 позиція
+
+└ POST /orders — більше, ніж є на складі → 409
+  POST http://127.0.0.1:31362/api/v1/orders [409 CONFLICT, 325B, 2ms]
+  √  Статус 409
+  √  пояснення
+
+└ POST /orders — некоректні поля → 400
+  POST http://127.0.0.1:31362/api/v1/orders [400 BAD REQUEST, 424B, 2ms]
+  √  Статус 400
+  √  помилки вкладених полів
+
+└ GET /orders?status=Нове
+  GET http://127.0.0.1:31362/api/v1/orders?status=%D0%9D%D0%BE%D0%B2%D0%B5 [200 OK, 997B, 2ms]
+  √  Статус 200
+  √  лише нові
+
+└ GET /orders/{id} — з позиціями
+  GET http://127.0.0.1:31362/api/v1/orders/7 [200 OK, 783B, 3ms]
+  √  Статус 200
+  √  є items
+
+└ PATCH /orders/{id} — статус «Відправлене»
+  PATCH http://127.0.0.1:31362/api/v1/orders/7 [200 OK, 797B, 8ms]
+  √  Статус 200
+  √  статус змінено
+
+└ PATCH /orders/{id} — невідомий статус → 400
+  PATCH http://127.0.0.1:31362/api/v1/orders/7 [400 BAD REQUEST, 459B, 2ms]
+  √  Статус 400
+
+└ DELETE /orders/{id}
+  DELETE http://127.0.0.1:31362/api/v1/orders/7 [204 NO CONTENT, 223B, 8ms]
+  √  Статус 204
+
+└ GET /orders/{id} після видалення → 404
+  GET http://127.0.0.1:31362/api/v1/orders/7 [404 NOT FOUND, 298B, 2ms]
+  √  Статус 404
+
+□ 5. Клієнти, відгуки, промокоди (v1)
+└ GET /customers?q=олена
+  GET http://127.0.0.1:31362/api/v1/customers?q=%D0%BE%D0%BB%D0%B5%D0%BD%D0%B0 [200 OK, 434B, 2ms]
+  √  Статус 200
+  √  знайдено одного клієнта
+
+└ GET /customers/1 — з історією замовлень
+  GET http://127.0.0.1:31362/api/v1/customers/1 [200 OK, 1.19kB, 2ms]
+  √  Статус 200
+  √  є orders
+
+└ GET /customers/999 → 404
+  GET http://127.0.0.1:31362/api/v1/customers/999 [404 NOT FOUND, 294B, 2ms]
+  √  Статус 404
+
+└ GET /feedback — email не публікується
+  GET http://127.0.0.1:31362/api/v1/feedback [200 OK, 1.14kB, 2ms]
+  √  Статус 200
+  √  немає email
+
+└ POST /feedback
+  POST http://127.0.0.1:31362/api/v1/feedback [201 CREATED, 410B, 6ms]
+  √  Статус 201
+
+└ POST /feedback — оцінка 7 і коротке повідомлення → 400
+  POST http://127.0.0.1:31362/api/v1/feedback [400 BAD REQUEST, 417B, 2ms]
+  √  Статус 400
+  √  дві помилки
+
+└ POST /promo-codes/check — PARTY15 на 1500 грн
+  POST http://127.0.0.1:31362/api/v1/promo-codes/check [200 OK, 328B, 2ms]
+  √  Статус 200
+  √  знижка 225 грн
+
+└ POST /promo-codes/check — сума замала
+  POST http://127.0.0.1:31362/api/v1/promo-codes/check [200 OK, 392B, 2ms]
+  √  Статус 200
+  √  valid=false з причиною
+
+□ 6. API v2 і загальні помилки
+└ GET /api/v2/ — точка входу
+  GET http://127.0.0.1:31362/api/v2/ [200 OK, 353B, 2ms]
+  √  Статус 200
+  √  посилання на ресурси
+
+└ GET /api/v2/products?per_page=5&page=2 — пагінація
+  GET http://127.0.0.1:31362/api/v2/products?per_page=5&page=2 [200 OK, 3.97kB, 3ms]
+  √  Статус 200
+  √  meta
+  √  links.next / prev
+
+└ GET /api/v2/products/1 — новий формат товару
+  GET http://127.0.0.1:31362/api/v2/products/1 [200 OK, 922B, 2ms]
+  √  Статус 200
+  √  ціна — об’єкт з валютою
+  √  категорія вкладена
+
+└ GET /api/v2/products?per_page=500 → 400 (формат помилки v2)
+  GET http://127.0.0.1:31362/api/v2/products?per_page=500 [400 BAD REQUEST, 344B, 2ms]
+  √  Статус 400
+  √  error.code = validation_error
+
+└ GET /api/v2/categories — дерево
+  GET http://127.0.0.1:31362/api/v2/categories [200 OK, 1.45kB, 2ms]
+  √  Статус 200
+  √  у «Стратегій» 2 підкатегорії
+
+└ POST /api/v2/orders
+  POST http://127.0.0.1:31362/api/v2/orders [201 CREATED, 673B, 8ms]
+  √  Статус 201
+  √  totals у конверті data
+
+└ GET /api/v2/products/999 → 404 (формат v2)
+  GET http://127.0.0.1:31362/api/v2/products/999 [404 NOT FOUND, 273B, 2ms]
+  √  Статус 404
+  √  error.status і code
+
+└ GET /api/v1/unknown → 404 у JSON
+  GET http://127.0.0.1:31362/api/v1/unknown [404 NOT FOUND, 220B, 1ms]
+  √  Статус 404
+  √  Відповідь у JSON
+
+└ DELETE /api/v1/health → 405 із заголовком Allow
+  DELETE http://127.0.0.1:31362/api/v1/health [405 METHOD NOT ALLOWED, 293B, 2ms]
+  √  Статус 405
+  √  Заголовок Allow
+
+┌─────────────────────────┬─────────────────┬─────────────────┐
+│                         │        executed │          failed │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│              iterations │               1 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│                requests │              51 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│            test-scripts │              51 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│      prerequest-scripts │               0 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│              assertions │             101 │               0 │
+├─────────────────────────┴─────────────────┴─────────────────┤
+│ total run duration: 4.6s                                    │
+├─────────────────────────────────────────────────────────────┤
+│ total data received: 29.82kB (approx)                       │
+├─────────────────────────────────────────────────────────────┤
+│ average response time: 3ms [min: 1ms, max: 14ms, s.d.: 2ms] │
+└─────────────────────────────────────────────────────────────┘
