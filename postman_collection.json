@@ -1,0 +1,1367 @@
+{
+  "info": {
+    "name": "Кубик — REST API (лабораторна 05)",
+    "description": "Колекція тестових сценаріїв для API магазину настільних ігор «Кубик». Запускати на свіжій БД (python seed_data.py). Кожен запит містить тести pm.test.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5000"
+    },
+    {
+      "key": "apiKey",
+      "value": "dev-api-key"
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Службові",
+      "item": [
+        {
+          "name": "GET /health — сервіс працює",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Відповідь у JSON\", () => pm.response.to.be.json);",
+                  "pm.test(\"status = ok\", () => { const b = pm.response.json(); pm.expect(b.status).to.eql(\"ok\"); });",
+                  "pm.test(\"v1 позначена як попередня версія\", () => pm.expect(pm.response.headers.get(\"Deprecation\")).to.eql(\"true\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /stats без ключа → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/stats"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"є текст помилки\", () => { const b = pm.response.json(); pm.expect(b.error).to.include(\"X-API-Key\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /stats з ключем",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/stats"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"є кількість замовлень і товарів\", () => { const b = pm.response.json(); pm.expect(b.orders).to.be.a(\"number\"); pm.expect(b.products).to.eql(12); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Товари (v1)",
+      "item": [
+        {
+          "name": "GET /products — усі товари",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Відповідь у JSON\", () => pm.response.to.be.json);",
+                  "pm.test(\"масив із 12 товарів\", () => { const b = pm.response.json(); pm.expect(b).to.be.an(\"array\").with.lengthOf(12); });",
+                  "pm.test(\"Час відповіді < 500 мс\", () => pm.expect(pm.response.responseTime).to.be.below(500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products?category=strategy&sort=price_asc — фільтр з підкатегоріями",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products?category=strategy&sort=price_asc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"4 товари, від дешевшого\", () => { const b = pm.response.json(); pm.expect(b.map(p => p.slug)).to.eql([\"small-world\", \"terraforming-mars\", \"brass\", \"kemet\"]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products?q=МАРС — пошук без урахування регістру",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products?q=%D0%9C%D0%90%D0%A0%D0%A1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"знайдено «Тераформування Марса»\", () => { const b = pm.response.json(); pm.expect(b[0].slug).to.eql(\"terraforming-mars\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products?category=nope — невідома категорія → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products?category=nope"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"пояснення в details.category\", () => { const b = pm.response.json(); pm.expect(b.details.category).to.include(\"nope\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products/1 — один товар",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products/1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"це «Каркасон»\", () => { const b = pm.response.json(); pm.expect(b.slug).to.eql(\"carcassonne\"); pm.expect(b.price).to.eql(1150); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products/999 — неіснуючий id → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products/999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Відповідь у JSON\", () => pm.response.to.be.json);",
+                  "pm.test(\"помилка в JSON\", () => { const b = pm.response.json(); pm.expect(b.error).to.include(\"999\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /products без ключа → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Вінгспен\",\n  \"slug\": \"wingspan\",\n  \"category_id\": 1,\n  \"price\": 2190,\n  \"stock\": 4,\n  \"players_min\": 1,\n  \"players_max\": 5,\n  \"age\": 10,\n  \"minutes\": 70,\n  \"emoji\": \"🐦\",\n  \"short\": \"Колекціонуйте птахів у заповіднику.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /products з порожніми й хибними полями → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": \"дорого\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"помилки по полях\", () => { const b = pm.response.json(); pm.expect(b.details.name).to.exist; pm.expect(b.details.price).to.eql(\"має бути числом\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /products не JSON → 415",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products",
+            "body": {
+              "mode": "raw",
+              "raw": "name=Гра&price=100"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 415\", () => pm.response.to.have.status(415));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /products — створити товар",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Вінгспен\",\n  \"slug\": \"wingspan\",\n  \"category_id\": 1,\n  \"price\": 2190,\n  \"stock\": 4,\n  \"players_min\": 1,\n  \"players_max\": 5,\n  \"age\": 10,\n  \"minutes\": 70,\n  \"emoji\": \"🐦\",\n  \"short\": \"Колекціонуйте птахів у заповіднику.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"товар створено\", () => { const b = pm.response.json(); pm.expect(b.id).to.be.a(\"number\"); pm.expect(b.name).to.eql(\"Вінгспен\"); });",
+                  "pm.test(\"Є заголовок Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/v1/products/\"));",
+                  "pm.collectionVariables.set(\"productId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /products з існуючим slug → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Вінгспен\",\n  \"slug\": \"wingspan\",\n  \"category_id\": 1,\n  \"price\": 2190,\n  \"stock\": 4,\n  \"players_min\": 1,\n  \"players_max\": 5,\n  \"age\": 10,\n  \"minutes\": 70,\n  \"emoji\": \"🐦\",\n  \"short\": \"Колекціонуйте птахів у заповіднику.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"slug має бути унікальним\", () => { const b = pm.response.json(); pm.expect(b.details.slug).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /products/{id} — повна заміна",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Вінгспен (друге видання)\",\n  \"slug\": \"wingspan\",\n  \"category_id\": 1,\n  \"price\": 1990,\n  \"stock\": 4,\n  \"players_min\": 1,\n  \"players_max\": 5,\n  \"age\": 10,\n  \"minutes\": 70,\n  \"emoji\": \"🐦\",\n  \"short\": \"Колекціонуйте птахів у заповіднику.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ціна й назва оновлені\", () => { const b = pm.response.json(); pm.expect(b.price).to.eql(1990); pm.expect(b.name).to.eql(\"Вінгспен (друге видання)\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /products/{id} — змінити лише залишок",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 0\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"stock = 0, інші поля без змін\", () => { const b = pm.response.json(); pm.expect(b.stock).to.eql(0); pm.expect(b.price).to.eql(1990); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /products/{id} з players_max < players_min → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"players_min\": 6,\n  \"players_max\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"помилка players_max\", () => { const b = pm.response.json(); pm.expect(b.details.players_max).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /products/{id} — видалити створений товар",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Порожнє тіло\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /products/{id} після видалення → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/products/{{productId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /products/1 — товар у замовленнях → 409",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/products/1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"пояснення конфлікту\", () => { const b = pm.response.json(); pm.expect(b.error).to.include(\"замовленнях\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Категорії (v1)",
+      "item": [
+        {
+          "name": "GET /categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"7 категорій, є вкладені\", () => { const b = pm.response.json(); pm.expect(b).to.have.lengthOf(7); pm.expect(b.some(c => c.parent_id)).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories — підкатегорія «Стратегій»",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Варгейми\",\n  \"slug\": \"wargames\",\n  \"emoji\": \"⚔️\",\n  \"color\": \"#495057\",\n  \"parent_id\": 2\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"parent_id = 2\", () => { const b = pm.response.json(); pm.expect(b.parent_id).to.eql(2); });",
+                  "pm.collectionVariables.set(\"categoryId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /categories третього рівня → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Глибока\",\n  \"slug\": \"deep\",\n  \"emoji\": \"🎲\",\n  \"color\": \"#000000\",\n  \"parent_id\": 3\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"лише 2 рівні вкладеності\", () => { const b = pm.response.json(); pm.expect(b.details.parent_id).to.include(\"верхнього рівня\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /categories/5 — є товари → 409",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/categories/5"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /categories/{id} — видалити створену",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/categories/{{categoryId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Замовлення (v1)",
+      "item": [
+        {
+          "name": "POST /orders — оформити з промокодом",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Ілля Пламетюк\",\n    \"email\": \"student@example.com\",\n    \"phone\": \"+380 67 123 45 67\",\n    \"city\": \"Луцьк\"\n  },\n  \"address\": \"Відділення Нової пошти №3\",\n  \"comment\": \"Подарункове пакування\",\n  \"items\": [\n    {\n      \"product_id\": 11,\n      \"quantity\": 2\n    }\n  ],\n  \"promo_code\": \"WELCOME10\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"суми пораховані сервером\", () => { const b = pm.response.json(); pm.expect(b.subtotal).to.eql(780); pm.expect(b.discount).to.eql(78); pm.expect(b.total).to.eql(702); });",
+                  "pm.test(\"статус «Нове», 1 позиція\", () => { const b = pm.response.json(); pm.expect(b.status).to.eql(\"Нове\"); pm.expect(b.items).to.have.lengthOf(1); });",
+                  "pm.collectionVariables.set(\"orderId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /orders — більше, ніж є на складі → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Ілля Пламетюк\",\n    \"email\": \"student@example.com\",\n    \"phone\": \"+380 67 123 45 67\",\n    \"city\": \"Луцьк\"\n  },\n  \"address\": \"НП 3\",\n  \"items\": [\n    {\n      \"product_id\": 3,\n      \"quantity\": 9\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"пояснення\", () => { const b = pm.response.json(); pm.expect(b.error).to.include(\"на складі\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /orders — некоректні поля → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Ілля Пламетюк\",\n    \"email\": \"не-email\",\n    \"phone\": \"+380 67 123 45 67\",\n    \"city\": \"Луцьк\"\n  },\n  \"address\": \"НП 3\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"помилки вкладених полів\", () => { const b = pm.response.json(); pm.expect(b.details).to.have.property(\"customer.email\"); pm.expect(b.details).to.have.property(\"items[0].quantity\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /orders?status=Нове",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders?status=%D0%9D%D0%BE%D0%B2%D0%B5"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"лише нові\", () => { const b = pm.response.json(); pm.expect(b.every(o => o.status === \"Нове\")).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /orders/{id} — з позиціями",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"є items\", () => { const b = pm.response.json(); pm.expect(b.items[0].name).to.eql(\"Доббль\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /orders/{id} — статус «Відправлене»",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Відправлене\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"статус змінено\", () => { const b = pm.response.json(); pm.expect(b.status).to.eql(\"Відправлене\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /orders/{id} — невідомий статус → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Загублене\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /orders/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /orders/{id} після видалення → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Клієнти, відгуки, промокоди (v1)",
+      "item": [
+        {
+          "name": "GET /customers?q=олена",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/customers?q=%D0%BE%D0%BB%D0%B5%D0%BD%D0%B0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"знайдено одного клієнта\", () => { const b = pm.response.json(); pm.expect(b).to.have.lengthOf(1); pm.expect(b[0].orders_count).to.eql(2); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /customers/1 — з історією замовлень",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/customers/1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"є orders\", () => { const b = pm.response.json(); pm.expect(b.orders).to.be.an(\"array\").that.is.not.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /customers/999 → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/customers/999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /feedback — email не публікується",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/feedback"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"немає email\", () => { const b = pm.response.json(); pm.expect(b[0]).to.not.have.property(\"email\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/feedback",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Марія\",\n  \"email\": \"maria@example.com\",\n  \"rating\": 5,\n  \"message\": \"Чудовий магазин, швидка доставка!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /feedback — оцінка 7 і коротке повідомлення → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/feedback",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Марія\",\n  \"email\": \"maria@example.com\",\n  \"rating\": 7,\n  \"message\": \"ok\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"дві помилки\", () => { const b = pm.response.json(); pm.expect(b.details.rating).to.exist; pm.expect(b.details.message).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /promo-codes/check — PARTY15 на 1500 грн",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/promo-codes/check",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"party15\",\n  \"subtotal\": 1500\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"знижка 225 грн\", () => { const b = pm.response.json(); pm.expect(b.valid).to.be.true; pm.expect(b.discount).to.eql(225); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /promo-codes/check — сума замала",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/promo-codes/check",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"PARTY15\",\n  \"subtotal\": 500\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"valid=false з причиною\", () => { const b = pm.response.json(); pm.expect(b.valid).to.be.false; pm.expect(b.reason).to.include(\"1000\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. API v2 і загальні помилки",
+      "item": [
+        {
+          "name": "GET /api/v2/ — точка входу",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"посилання на ресурси\", () => { const b = pm.response.json(); pm.expect(b.data.links.products).to.eql(\"/api/v2/products\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/products?per_page=5&page=2 — пагінація",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/products?per_page=5&page=2"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"meta\", () => { const b = pm.response.json(); pm.expect(b.meta).to.eql({page: 2, per_page: 5, total: 12, pages: 3}); });",
+                  "pm.test(\"links.next / prev\", () => { const b = pm.response.json(); pm.expect(b.links.next).to.include(\"page=3\"); pm.expect(b.links.prev).to.include(\"page=1\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/products/1 — новий формат товару",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/products/1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ціна — об’єкт з валютою\", () => { const b = pm.response.json(); pm.expect(b.data.price).to.eql({amount: 1150, currency: \"UAH\"}); });",
+                  "pm.test(\"категорія вкладена\", () => { const b = pm.response.json(); pm.expect(b.data.category.slug).to.eql(\"family\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/products?per_page=500 → 400 (формат помилки v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/products?per_page=500"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.code = validation_error\", () => { const b = pm.response.json(); pm.expect(b.error.code).to.eql(\"validation_error\"); pm.expect(b.error.fields.per_page).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/categories — дерево",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"у «Стратегій» 2 підкатегорії\", () => { const b = pm.response.json(); pm.expect(b.data.find(c => c.slug === \"strategy\").children).to.have.lengthOf(2); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v2/orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v2/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"name\": \"Ілля Пламетюк\",\n    \"email\": \"student@example.com\",\n    \"phone\": \"+380 67 123 45 67\",\n    \"city\": \"Луцьк\"\n  },\n  \"address\": \"НП 3\",\n  \"items\": [\n    {\n      \"product_id\": 7,\n      \"quantity\": 3\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"totals у конверті data\", () => { const b = pm.response.json(); pm.expect(b.data.totals.total).to.eql(1770); pm.expect(b.data.totals.currency).to.eql(\"UAH\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v2/products/999 → 404 (формат v2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v2/products/999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.status і code\", () => { const b = pm.response.json(); pm.expect(b.error.status).to.eql(404); pm.expect(b.error.code).to.eql(\"not_found\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/unknown → 404 у JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/unknown"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Відповідь у JSON\", () => pm.response.to.be.json);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/v1/health → 405 із заголовком Allow",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Статус 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Заголовок Allow\", () => pm.expect(pm.response.headers.get(\"Allow\")).to.include(\"GET\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
