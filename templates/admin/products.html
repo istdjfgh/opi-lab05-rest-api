@@ -1,0 +1,36 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import csrf with context %}
+{% block admin_title %}Товари{% endblock %}
+{% block admin_content %}
+<div class="section-head">
+    <h1>Товари</h1>
+    <a class="btn btn-primary" href="{{ url_for('admin.product_new') }}">+ Додати товар</a>
+</div>
+<form method="get" class="inline-form search-form">
+    <label class="visually-hidden" for="q">Пошук</label>
+    <input id="q" name="q" type="search" value="{{ q }}" placeholder="Пошук за назвою">
+    <button class="btn btn-ghost" type="submit">Знайти</button>
+</form>
+<div class="card table-wrap">
+    <table class="table">
+        <thead><tr><th>Товар</th><th>Категорія</th><th>Ціна</th><th>Залишок</th><th>Гравців</th><th></th></tr></thead>
+        <tbody>
+        {% for p in products %}
+            <tr>
+                <td>{{ p.emoji }} <a href="{{ url_for('shop.product_page', slug=p.slug) }}"><strong>{{ p.name }}</strong></a>{% if p.is_bestseller %} <span class="badge badge-hot">хіт</span>{% endif %}</td>
+                <td>{{ p.category_emoji }} {{ p.category_name }}</td>
+                <td class="nowrap">{{ p.price | price }}</td>
+                <td><span class="{{ 'text-danger' if p.stock <= 2 else '' }}">{{ p.stock }}</span></td>
+                <td>{{ p | players }}</td>
+                <td class="row-actions">
+                    <a class="btn btn-small btn-ghost" href="{{ url_for('admin.product_edit', product_id=p.id) }}">✏️ Редагувати</a>
+                    <form method="post" action="{{ url_for('admin.product_delete', product_id=p.id) }}" onsubmit="return confirm('Видалити «{{ p.name }}»?')">
+                        {{ csrf() }}<button class="btn btn-small btn-danger-ghost" type="submit">🗑</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}<tr><td colspan="6" class="muted">Товарів не знайдено.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

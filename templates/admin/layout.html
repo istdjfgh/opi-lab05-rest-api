@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf with context %}
+{% block title %}{% block admin_title %}Адмін-панель{% endblock %} · Адмін{% endblock %}
+{% block content %}
+<div class="container admin-layout">
+    <aside class="admin-sidebar" aria-label="Меню адмін-панелі">
+        <p class="admin-sidebar-title">⚙️ Адмін-панель</p>
+        {# (endpoint, підпис, префікс ендпоінтів розділу для підсвічування) #}
+        {% set items = [
+            ('admin.dashboard', '📊 Огляд', 'admin.dashboard'),
+            ('admin.order_list', '📦 Замовлення', 'admin.order'),
+            ('admin.products', '🎲 Товари', 'admin.product'),
+            ('admin.categories', '🗂️ Категорії', 'admin.categor'),
+            ('admin.customer_list', '👥 Клієнти', 'admin.customer'),
+            ('admin.promos', '🏷️ Промокоди', 'admin.promo'),
+            ('admin.feedback_list', '💬 Відгуки', 'admin.feedback'),
+        ] %}
+        <nav>
+            {% for endpoint, label, prefix in items %}
+                <a href="{{ url_for(endpoint) }}" {% if (request.endpoint or '').startswith(prefix) %}aria-current="page"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
+        <form method="post" action="{{ url_for('admin.logout') }}">
+            {{ csrf() }}<button class="btn btn-ghost btn-small btn-block" type="submit">Вийти</button>
+        </form>
+    </aside>
+    <section class="admin-main">
+        {% block admin_content %}{% endblock %}
+    </section>
+</div>
+{% endblock %}

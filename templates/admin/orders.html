@@ -1,0 +1,28 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import status_badge with context %}
+{% block admin_title %}Замовлення{% endblock %}
+{% block admin_content %}
+<div class="section-head"><h1>Замовлення</h1></div>
+<nav class="tabs" aria-label="Фільтр за статусом">
+    <a href="{{ url_for('admin.order_list') }}" {% if not current %}aria-current="page"{% endif %}>Усі</a>
+    {% for s in statuses %}<a href="{{ url_for('admin.order_list', status=s) }}" {% if current == s %}aria-current="page"{% endif %}>{{ s }}</a>{% endfor %}
+</nav>
+<div class="card table-wrap">
+    <table class="table">
+        <thead><tr><th>№</th><th>Дата</th><th>Клієнт</th><th>Товарів</th><th>Сума</th><th>Промокод</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}"><strong>№{{ o.id }}</strong></a></td>
+                <td class="nowrap">{{ o.created_at[:16] }}</td>
+                <td>{{ o.customer_name }}<br><span class="muted small">{{ o.customer_email }}</span></td>
+                <td>{{ o.items_count }}</td>
+                <td class="nowrap">{{ o.total | price }}</td>
+                <td>{{ o.promo_code or '—' }}</td>
+                <td>{{ status_badge(o.status) }}</td>
+            </tr>
+        {% else %}<tr><td colspan="7" class="muted">Замовлень немає.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

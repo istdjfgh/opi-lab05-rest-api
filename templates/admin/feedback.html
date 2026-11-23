@@ -1,0 +1,25 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import stars, csrf with context %}
+{% block admin_title %}Відгуки{% endblock %}
+{% block admin_content %}
+<h1>Відгуки</h1>
+{% for f in items %}
+    <article class="card feedback-item {% if not f.is_read %}unread{% endif %}">
+        <div class="section-head">
+            <div><strong>{{ f.name }}</strong> <span class="muted small">{{ f.email }} · {{ f.created_at[:16] }}</span></div>
+            {{ stars(f.rating) }}
+        </div>
+        <p>{{ f.message }}</p>
+        <div class="row-actions">
+            <form method="post" action="{{ url_for('admin.feedback_read', feedback_id=f.id) }}">
+                {{ csrf() }}<button class="btn btn-small btn-ghost" type="submit">{{ '↩ Позначити непрочитаним' if f.is_read else '✓ Позначити прочитаним' }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.feedback_delete', feedback_id=f.id) }}" onsubmit="return confirm('Видалити відгук?')">
+                {{ csrf() }}<button class="btn btn-small btn-danger-ghost" type="submit">🗑 Видалити</button>
+            </form>
+        </div>
+    </article>
+{% else %}
+    <p class="muted">Відгуків ще немає.</p>
+{% endfor %}
+{% endblock %}

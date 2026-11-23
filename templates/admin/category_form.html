@@ -1,0 +1,28 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import field, csrf with context %}
+{% block admin_title %}Редагування категорії{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.categories') }}">← Категорії</a></p>
+<h1>Редагування: {{ category.name }}</h1>
+<form class="card form-card narrow-form" method="post" novalidate>
+    {{ csrf() }}
+    {{ field('name', 'Назва', values, errors, required=true) }}
+    {{ field('slug', 'Slug', values, errors, required=true) }}
+    <div class="field-row">
+        {{ field('emoji', 'Емодзі', values, errors, required=true) }}
+        {{ field('color', 'Колір', values, errors, type='color', required=true) }}
+    </div>
+    <div class="field {% if errors.parent_id %}has-error{% endif %}">
+        <label for="f-parent_id">Батьківська категорія</label>
+        <select id="f-parent_id" name="parent_id">
+            <option value="">— верхній рівень —</option>
+            {% for p in parents %}<option value="{{ p.id }}" {% if values.parent_id == p.id %}selected{% endif %}>{{ p.emoji }} {{ p.name }}</option>{% endfor %}
+        </select>
+        {% if errors.parent_id %}<p class="field-error">{{ errors.parent_id }}</p>{% endif %}
+    </div>
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Зберегти</button>
+        <a class="btn btn-ghost" href="{{ url_for('admin.categories') }}">Скасувати</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Клієнти{% endblock %}
+{% block admin_content %}
+<div class="section-head">
+    <h1>Клієнти</h1>
+    <a class="btn btn-primary" href="{{ url_for('admin.customer_new') }}">+ Додати клієнта</a>
+</div>
+<form method="get" class="inline-form search-form">
+    <label class="visually-hidden" for="q">Пошук</label>
+    <input id="q" name="q" type="search" value="{{ q }}" placeholder="Ім’я, email або телефон">
+    <button class="btn btn-ghost" type="submit">Знайти</button>
+</form>
+<div class="card table-wrap">
+    <table class="table">
+        <thead><tr><th>Клієнт</th><th>Контакти</th><th>Місто</th><th>Замовлень</th><th>Сума покупок</th><th>З нами з</th></tr></thead>
+        <tbody>
+        {% for c in customers %}
+            <tr>
+                <td><a href="{{ url_for('admin.customer_detail', customer_id=c.id) }}"><strong>{{ c.name }}</strong></a></td>
+                <td>{{ c.email }}<br><span class="muted small">{{ c.phone or '—' }}</span></td>
+                <td>{{ c.city or '—' }}</td>
+                <td>{{ c.orders_count }}</td>
+                <td class="nowrap">{{ c.orders_total | price }}</td>
+                <td class="nowrap">{{ c.created_at[:10] }}</td>
+            </tr>
+        {% else %}<tr><td colspan="6" class="muted">Клієнтів не знайдено.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

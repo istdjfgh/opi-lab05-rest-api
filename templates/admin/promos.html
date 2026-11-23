@@ -1,0 +1,35 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import csrf with context %}
+{% block admin_title %}Промокоди{% endblock %}
+{% block admin_content %}
+<h1>Промокоди</h1>
+<div class="admin-stack">
+    <section class="card table-wrap">
+        <table class="table">
+            <thead><tr><th>Код</th><th>Знижка</th><th>Умови</th><th>Використано</th><th>Стан</th><th></th></tr></thead>
+            <tbody>
+            {% for p in promos %}
+                <tr class="{{ '' if p.is_active else 'row-muted' }}">
+                    <td><code>{{ p.code }}</code></td>
+                    <td>−{{ p.discount_percent }}%</td>
+                    <td class="small">{% if p.min_total %}від {{ p.min_total | price }}<br>{% endif %}{% if p.valid_until %}до {{ p.valid_until }}{% else %}безстроковий{% endif %}</td>
+                    <td>{{ p.used_count }}{% if p.max_uses %} / {{ p.max_uses }}{% endif %}</td>
+                    <td>
+                        <form method="post" action="{{ url_for('admin.promo_toggle', promo_id=p.id) }}">
+                            {{ csrf() }}<button class="btn btn-small btn-ghost" type="submit">{{ '🟢 Активний' if p.is_active else '⚪ Вимкнений' }}</button>
+                        </form>
+                    </td>
+                    <td class="row-actions">
+                        <a class="btn btn-small btn-ghost" href="{{ url_for('admin.promo_edit', promo_id=p.id) }}">✏️</a>
+                        <form method="post" action="{{ url_for('admin.promo_delete', promo_id=p.id) }}" onsubmit="return confirm('Видалити {{ p.code }}?')">
+                            {{ csrf() }}<button class="btn btn-small btn-danger-ghost" type="submit" aria-label="Видалити {{ p.code }}">🗑</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}<tr><td colspan="6" class="muted">Промокодів ще немає.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <div class="narrow-form">{% include "admin/_promo_fields.html" %}</div>
+</div>
+{% endblock %}

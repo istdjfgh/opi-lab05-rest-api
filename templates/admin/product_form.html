@@ -1,0 +1,44 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import field, csrf with context %}
+{% block admin_title %}{{ 'Редагування товару' if product else 'Новий товар' }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.products') }}">← Усі товари</a></p>
+<h1>{{ ('Редагування: ' ~ product.name) if product else 'Новий товар' }}</h1>
+<form class="card form-card" method="post" novalidate>
+    {{ csrf() }}
+    <div class="field-row">
+        {{ field('name', 'Назва', values, errors, required=true) }}
+        {{ field('slug', 'Slug (адреса сторінки)', values, errors, required=true, hint='латиницею, наприклад ticket-to-ride') }}
+    </div>
+    <div class="field-row">
+        <div class="field {% if errors.category_id %}has-error{% endif %}">
+            <label for="f-category_id">Категорія <span class="req">*</span></label>
+            <select id="f-category_id" name="category_id">
+                <option value="">— оберіть —</option>
+                {% for c in categories %}
+                    <option value="{{ c.id }}" {% if values.category_id == c.id %}selected{% endif %}>{{ '— ' if c.parent_id }}{{ c.emoji }} {{ c.name }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.category_id %}<p class="field-error">{{ errors.category_id }}</p>{% endif %}
+        </div>
+        {{ field('emoji', 'Емодзі (обкладинка)', values, errors, required=true) }}
+    </div>
+    <div class="field-row field-row-4">
+        {{ field('price', 'Ціна, грн', values, errors, type='number', required=true, attrs='min="0" step="0.01"') }}
+        {{ field('stock', 'Залишок, шт.', values, errors, type='number', required=true, attrs='min="0"') }}
+        {{ field('players_min', 'Гравців від', values, errors, type='number', required=true, attrs='min="1" max="20"') }}
+        {{ field('players_max', 'Гравців до', values, errors, type='number', required=true, attrs='min="1" max="20"') }}
+    </div>
+    <div class="field-row">
+        {{ field('age', 'Вік від', values, errors, type='number', required=true, attrs='min="0" max="99"') }}
+        {{ field('minutes', 'Тривалість, хв', values, errors, type='number', required=true, attrs='min="1"') }}
+    </div>
+    {{ field('short', 'Короткий опис (для картки)', values, errors, required=true) }}
+    {{ field('description', 'Повний опис', values, errors, type='textarea') }}
+    <label class="checkbox"><input type="checkbox" name="is_bestseller" value="1" {% if values.is_bestseller %}checked{% endif %}> Хіт продажів (показувати на головній)</label>
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Зберегти</button>
+        <a class="btn btn-ghost" href="{{ url_for('admin.products') }}">Скасувати</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% from "_macros.html" import field, csrf with context %}
+<form class="card form-card" method="post" novalidate>
+    {{ csrf() }}
+    <h2>{{ 'Редагування ' ~ promo.code if promo else 'Новий промокод' }}</h2>
+    {{ field('code', 'Код', values, errors, required=true, hint='латиницею, наприклад SPRING15') }}
+    <div class="field-row">
+        {{ field('discount_percent', 'Знижка, %', values, errors, type='number', required=true, attrs='min="1" max="90"') }}
+        {{ field('min_total', 'Мін. сума, грн', values, errors, type='number', attrs='min="0"') }}
+    </div>
+    <div class="field-row">
+        {{ field('valid_until', 'Діє до', values, errors, type='date') }}
+        {{ field('max_uses', 'Ліміт використань', values, errors, type='number', attrs='min="1"') }}
+    </div>
+    <label class="checkbox"><input type="checkbox" name="is_active" value="1" {% if values.is_active %}checked{% endif %}> Активний</label>
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ 'Зберегти' if promo else 'Створити' }}</button>
+        {% if promo %}<a class="btn btn-ghost" href="{{ url_for('admin.promos') }}">Скасувати</a>{% endif %}
+    </div>
+</form>

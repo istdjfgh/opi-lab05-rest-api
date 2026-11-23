@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import status_badge, csrf with context %}
+{% block admin_title %}Замовлення №{{ order.id }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.order_list') }}">← Усі замовлення</a></p>
+<div class="section-head"><h1>Замовлення №{{ order.id }}</h1>{{ status_badge(order.status) }}</div>
+
+<div class="two-col">
+    <section class="card">
+        <h2>Клієнт</h2>
+        <p><a href="{{ url_for('admin.customer_detail', customer_id=order.customer_id) }}"><strong>{{ order.customer_name }}</strong></a><br>
+           {{ order.customer_email }} · {{ order.customer_phone }}</p>
+        <p><strong>Доставка:</strong> {{ order.address }}</p>
+        {% if order.comment %}<p><strong>Коментар:</strong> {{ order.comment }}</p>{% endif %}
+        <p class="muted">Створено: {{ order.created_at }}</p>
+    </section>
+    <section class="card">
+        <h2>Статус</h2>
+        <form method="post" action="{{ url_for('admin.order_status', order_id=order.id) }}" class="inline-form">
+            {{ csrf() }}
+            <label class="visually-hidden" for="status">Новий статус</label>
+            <select id="status" name="status">
+                {% for s in statuses %}<option {% if s == order.status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+            </select>
+            <button class="btn btn-primary" type="submit">Змінити статус</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.order_delete', order_id=order.id) }}" onsubmit="return confirm('Видалити замовлення №{{ order.id }}? Цю дію не можна скасувати.')">
+            {{ csrf() }}<button class="btn btn-danger-ghost" type="submit">🗑 Видалити замовлення</button>
+        </form>
+    </section>
+</div>
+
+<section class="card table-wrap">
+    <h2>Позиції (таблиця order_items)</h2>
+    <table class="table">
+        <thead><tr><th>Товар</th><th>Ціна на момент покупки</th><th>К-сть</th><th>Сума</th></tr></thead>
+        <tbody>
+        {% for i in items %}
+            <tr><td>{{ i.emoji }} <a href="{{ url_for('shop.product_page', slug=i.slug) }}">{{ i.name }}</a></td><td>{{ i.unit_price | price }}</td><td>{{ i.quantity }}</td><td>{{ i.line_total | price }}</td></tr>
+        {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><td colspan="3">Товари</td><td>{{ order.subtotal | price }}</td></tr>
+            {% if order.discount %}<tr><td colspan="3">Знижка ({{ order.promo_code }})</td><td>−{{ order.discount | price }}</td></tr>{% endif %}
+            <tr class="grand"><td colspan="3">Разом</td><td>{{ order.total | price }}</td></tr>
+        </tfoot>
+    </table>
+</section>
+{% endblock %}

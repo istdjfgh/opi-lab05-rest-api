@@ -1,0 +1,46 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import status_badge, stars with context %}
+{% block admin_title %}Огляд{% endblock %}
+{% block admin_content %}
+<h1>Огляд</h1>
+<div class="stat-grid">
+    <a class="stat" href="{{ url_for('admin.order_list') }}"><span class="stat-value">{{ stats.orders }}</span><span class="muted">замовлень</span></a>
+    <div class="stat"><span class="stat-value">{{ stats.revenue | price }}</span><span class="muted">виручка (без скасованих)</span></div>
+    <a class="stat" href="{{ url_for('admin.products') }}"><span class="stat-value">{{ stats.products }}</span><span class="muted">товарів · {{ stats.low_stock }} закінчуються</span></a>
+    <a class="stat" href="{{ url_for('admin.customer_list') }}"><span class="stat-value">{{ stats.customers }}</span><span class="muted">клієнтів</span></a>
+    <a class="stat" href="{{ url_for('admin.feedback_list') }}"><span class="stat-value">{{ stats.unread_feedback }}</span><span class="muted">непрочитаних відгуків</span></a>
+</div>
+
+<section class="card">
+    <h2>Замовлення за статусами</h2>
+    <div class="status-bars">
+        {% for status in statuses %}
+            {% set n = stats.by_status.get(status, 0) %}
+            <a class="status-bar" href="{{ url_for('admin.order_list', status=status) }}">
+                {{ status_badge(status) }}
+                <span class="bar"><span style="width: {{ (n / stats.orders * 100) if stats.orders else 0 }}%; background: {{ status_colors[status] }}"></span></span>
+                <strong>{{ n }}</strong>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="two-col">
+    <section class="card">
+        <div class="section-head"><h2>Останні замовлення</h2><a href="{{ url_for('admin.order_list') }}">Усі →</a></div>
+        <table class="table">
+            <tbody>
+            {% for o in recent %}
+                <tr><td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}">№{{ o.id }}</a></td><td>{{ o.customer_name }}</td><td>{{ o.total | price }}</td><td>{{ status_badge(o.status) }}</td></tr>
+            {% else %}<tr><td class="muted">Замовлень ще немає.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </section>
+    <section class="card">
+        <div class="section-head"><h2>Нові відгуки</h2><a href="{{ url_for('admin.feedback_list') }}">Усі →</a></div>
+        {% for f in unread %}
+            <blockquote class="review">{{ stars(f.rating) }}<p>{{ f.message | truncate(120) }}</p><footer>— {{ f.name }}</footer></blockquote>
+        {% else %}<p class="muted">Непрочитаних відгуків немає.</p>{% endfor %}
+    </section>
+</div>
+{% endblock %}

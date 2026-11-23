@@ -1,0 +1,21 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import field, csrf with context %}
+{% block admin_title %}{{ 'Редагування клієнта' if customer else 'Новий клієнт' }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.customer_list') }}">← Клієнти</a></p>
+<h1>{{ ('Редагування: ' ~ customer.name) if customer else 'Новий клієнт' }}</h1>
+<form class="card form-card narrow-form" method="post" novalidate>
+    {{ csrf() }}
+    {{ field('name', 'Ім’я', values, errors, required=true) }}
+    {{ field('email', 'Email', values, errors, type='email', required=true) }}
+    <div class="field-row">
+        {{ field('phone', 'Телефон', values, errors, type='tel') }}
+        {{ field('city', 'Місто', values, errors) }}
+    </div>
+    {{ field('note', 'Нотатка менеджера', values, errors, type='textarea') }}
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Зберегти</button>
+        <a class="btn btn-ghost" href="{{ url_for('admin.customer_list') }}">Скасувати</a>
+    </div>
+</form>
+{% endblock %}

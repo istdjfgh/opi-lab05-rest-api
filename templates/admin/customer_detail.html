@@ -1,0 +1,36 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import status_badge, csrf with context %}
+{% block admin_title %}{{ customer.name }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.customer_list') }}">← Клієнти</a></p>
+<div class="section-head">
+    <h1>{{ customer.name }}</h1>
+    <div class="row-actions">
+        <a class="btn btn-ghost" href="{{ url_for('admin.customer_edit', customer_id=customer.id) }}">✏️ Редагувати</a>
+        <form method="post" action="{{ url_for('admin.customer_delete', customer_id=customer.id) }}" onsubmit="return confirm('Видалити клієнта?')">
+            {{ csrf() }}<button class="btn btn-danger-ghost" type="submit">🗑 Видалити</button>
+        </form>
+    </div>
+</div>
+<div class="stat-grid">
+    <div class="stat"><span class="stat-value">{{ history | length }}</span><span class="muted">замовлень</span></div>
+    <div class="stat"><span class="stat-value">{{ spent | price }}</span><span class="muted">сума покупок</span></div>
+    <div class="stat"><span class="stat-value">{{ customer.created_at[:10] }}</span><span class="muted">клієнт з</span></div>
+</div>
+<section class="card">
+    <h2>Контакти</h2>
+    <p>✉️ {{ customer.email }}<br>📞 {{ customer.phone or '—' }}<br>📍 {{ customer.city or '—' }}</p>
+    {% if customer.note %}<p><strong>Нотатка:</strong> {{ customer.note }}</p>{% endif %}
+</section>
+<section class="card table-wrap">
+    <h2>Історія замовлень</h2>
+    <table class="table">
+        <thead><tr><th>№</th><th>Дата</th><th>Сума</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for o in history %}
+            <tr><td><a href="{{ url_for('admin.order_detail', order_id=o.id) }}">№{{ o.id }}</a></td><td>{{ o.created_at[:16] }}</td><td>{{ o.total | price }}</td><td>{{ status_badge(o.status) }}</td></tr>
+        {% else %}<tr><td colspan="4" class="muted">Замовлень ще немає.</td></tr>{% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "admin/layout.html" %}
+{% from "_macros.html" import field, csrf with context %}
+{% block admin_title %}Категорії{% endblock %}
+{% block admin_content %}
+<h1>Категорії <small class="muted">(з вкладеністю)</small></h1>
+<div class="two-col">
+    <section class="card">
+        <h2>Дерево категорій</h2>
+        <ul class="tree">
+            {% for root, children in tree %}
+                <li>
+                    {% set c = root %}{% include "admin/_category_row.html" %}
+                    {% if children %}
+                        <ul>{% for child in children %}<li>{% set c = child %}{% include "admin/_category_row.html" %}</li>{% endfor %}</ul>
+                    {% endif %}
+                </li>
+            {% else %}<li class="muted">Категорій ще немає.</li>{% endfor %}
+        </ul>
+    </section>
+    <form class="card form-card" method="post" novalidate>
+        {{ csrf() }}
+        <h2>Нова категорія</h2>
+        {{ field('name', 'Назва', values, errors, required=true) }}
+        {{ field('slug', 'Slug', values, errors, required=true, hint='латиницею: economic') }}
+        <div class="field-row">
+            {{ field('emoji', 'Емодзі', values, errors, required=true) }}
+            {{ field('color', 'Колір', values, errors, type='color', required=true) }}
+        </div>
+        <div class="field {% if errors.parent_id %}has-error{% endif %}">
+            <label for="f-parent_id">Батьківська категорія</label>
+            <select id="f-parent_id" name="parent_id">
+                <option value="">— верхній рівень —</option>
+                {% for p in parents %}<option value="{{ p.id }}" {% if values.parent_id == p.id %}selected{% endif %}>{{ p.emoji }} {{ p.name }}</option>{% endfor %}
+            </select>
+            {% if errors.parent_id %}<p class="field-error">{{ errors.parent_id }}</p>{% endif %}
+        </div>
+        <button class="btn btn-primary" type="submit">Додати</button>
+    </form>
+</div>
+{% endblock %}

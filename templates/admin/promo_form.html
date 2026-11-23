@@ -1,0 +1,7 @@
+{% extends "admin/layout.html" %}
+{% block admin_title %}Промокод {{ promo.code }}{% endblock %}
+{% block admin_content %}
+<p><a href="{{ url_for('admin.promos') }}">← Промокоди</a></p>
+<h1>Промокод {{ promo.code }}</h1>
+<div class="narrow-form">{% include "admin/_promo_fields.html" %}</div>
+{% endblock %}

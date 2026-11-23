@@ -1,0 +1,12 @@
+{# Рядок дерева категорій (підключається через include, змінна c — категорія) #}
+<div class="tree-row">
+    <span class="badge" style="--cat: {{ c.color }}">{{ c.emoji }} {{ c.name }}</span>
+    <span class="muted small">{{ c.slug }} · товарів: {{ c.products_count }}</span>
+    <span class="row-actions">
+        <a class="btn btn-small btn-ghost" href="{{ url_for('admin.category_edit', category_id=c.id) }}">✏️</a>
+        <form method="post" action="{{ url_for('admin.category_delete', category_id=c.id) }}" onsubmit="return confirm('Видалити категорію «{{ c.name }}»?')">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-danger-ghost" type="submit" aria-label="Видалити «{{ c.name }}»">🗑</button>
+        </form>
+    </span>
+</div>

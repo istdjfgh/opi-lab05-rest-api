@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf with context %}
+{% block title %}Вхід до адмін-панелі{% endblock %}
+{% block content %}
+<div class="container narrow">
+    <form class="card form-card login-card" method="post">
+        {{ csrf() }}
+        <p class="success-icon" aria-hidden="true">🔐</p>
+        <h1>Адмін-панель</h1>
+        <div class="field">
+            <label for="password">Пароль адміністратора</label>
+            <input id="password" name="password" type="password" required autofocus autocomplete="current-password">
+            <p class="hint">Для навчального запуску пароль за замовчуванням вказано в README (змінна ADMIN_PASSWORD).</p>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Увійти</button>
+    </form>
+</div>
+{% endblock %}
